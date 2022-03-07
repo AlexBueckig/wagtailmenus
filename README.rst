@@ -1,14 +1,22 @@
-.. image:: https://travis-ci.org/rkhleics/wagtailmenus.svg?branch=master
-    :alt: Build Status
-    :target: https://travis-ci.org/rkhleics/wagtailmenus
+.. image:: https://jazzband.co/static/img/badge.svg
+   :target: https://jazzband.co/
+   :alt: Jazzband
+
+.. image:: https://img.shields.io/pypi/v/wagtailmenus.svg
+   :target: https://pypi.python.org/pypi/wagtailmenus
+   :alt: PyPI Download
 
 .. image:: https://img.shields.io/pypi/v/wagtailmenus.svg
     :alt: PyPi Version
     :target: https://pypi.python.org/pypi/wagtailmenus
 
-.. image:: https://codecov.io/gh/rkhleics/wagtailmenus/branch/master/graph/badge.svg
+.. image:: https://github.com/jazzband/wagtailmenus/actions/workflows/test.yml/badge.svg
+    :alt: Build Status
+    :target: https://github.com/jazzband/wagtailmenus/actions/workflows/test.yml
+
+.. image:: https://codecov.io/gh/jazzband/wagtailmenus/branch/master/graph/badge.svg
     :alt: Code coverage
-    :target: https://codecov.io/gh/rkhleics/wagtailmenus
+    :target: https://codecov.io/gh/jazzband/wagtailmenus
 
 .. image:: https://readthedocs.org/projects/wagtailmenus/badge/?version=latest
     :alt: Documentation Status
@@ -27,7 +35,7 @@ The current version is tested for compatibility with the following:
 - Django versions 1.11, 2.0, 2.2 and 3.0
 - Python versions 3.4 to 3.8
 
-.. image:: https://raw.githubusercontent.com/rkhleics/wagtailmenus/master/docs/source/_static/images/repeating-item.png
+.. image:: https://raw.githubusercontent.com/jazzband/wagtailmenus/master/docs/source/_static/images/repeating-item.png
 
 New to wagtailmenus?
 ====================
@@ -42,9 +50,7 @@ How do I use it?
 For everything you need to get up and running with wagtailmenus, `view the official documentation <http://wagtailmenus.readthedocs.io/>`_.
 
 
-How do I contribute?
-====================
+Contributing
+============
 
-Want to contribute to wagtailmenus? We'd be happy to have you! You should start by taking a look at our `Contributor guidelines <http://wagtailmenus.readthedocs.io/en/stable/contributing/index.html>`_
-
-We also welcome translations. Translations should be submitted through `Transifex <https://www.transifex.com/rkhleics/wagtailmenus/>`_.
+As we are members of a `JazzBand project <https://jazzband.co/projects>`_, `wagtailmenus` contributors should adhere to the `Contributor Code of Conduct <https://jazzband.co/about/conduct>`_.

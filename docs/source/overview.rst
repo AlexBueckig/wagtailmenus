@@ -124,7 +124,7 @@ This would generate a menu with the following structure (with ``max_levels=2``):
     └── Donate
 
 .. note::
-    Have you noticed how the aricle pages are not shown below the 'Latest news' item,
+    Have you noticed how the article pages are not shown below the 'Latest news' item,
     despite specifying ``allow_subnav=True`` on the menu item? Only pages with a
     ``show_in_menus`` value of ``True`` will be displayed (at any level) in rendered
     menus. The field is added by Wagtail, so is present for all custom page types.
@@ -203,7 +203,7 @@ Solves the problem of important page links becoming just 'toggles' in multi-leve
 =======================================================================================
 
 Extend the ``wagtailmenus.models.MenuPage`` model instead of the usual
-``wagtail.wagtailcore.models.Page`` model to create your custom page types, and gain a
+``wagtail.core.models.Page`` model to create your custom page types, and gain a
 couple of extra fields that will allow you to configure certain pages to appear again
 alongside their children in multi-level menus. Use the menu tags provided, and that
 behaviour will remain consistent in all menus throughout your site. To find out more,
