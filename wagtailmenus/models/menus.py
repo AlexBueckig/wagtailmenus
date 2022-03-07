@@ -170,10 +170,10 @@ class Menu:
             option_vals.extra['fall_back_to_default_site_menus']
         """
         return OptionVals(
-            kwargs.pop('max_levels'),
-            kwargs.pop('apply_active_classes'),
-            kwargs.pop('allow_repeating_parents'),
-            kwargs.pop('use_absolute_page_urls'),
+            kwargs.pop('max_levels', settings.DEFAULT_CHILDREN_MENU_MAX_LEVELS),
+            kwargs.pop('apply_active_classes', False),
+            kwargs.pop('allow_repeating_parents', False),
+            kwargs.pop('use_absolute_page_urls', False),
             kwargs.pop('add_sub_menus_inline', settings.DEFAULT_ADD_SUB_MENUS_INLINE),
             kwargs.pop('parent_page', None),
             kwargs.pop('handle', None),  # for AbstractFlatMenu

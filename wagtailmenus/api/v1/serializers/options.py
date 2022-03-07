@@ -6,13 +6,14 @@ from wagtailmenus.api.utils import make_serializer_class
 
 from rest_framework import serializers
 
-
+from wagtailmenus.api import form_fields as api_form_fields
+from django import forms
 
 class BaseMenuOptionSerializer(serializers.Serializer):
     current_page_id = api_form_fields.PageIDChoiceField(
         label='current_page_id',
         required=False,
-        help_text=_(
+        help_text= (
             "The ID of the Wagtail Page you are generating the menu for "
             "(if available)."
         ),
@@ -21,7 +22,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
         label='current_url',
         max_length=300,
         required=False,
-        help_text=_(
+        help_text= (
             "The full URL of the page you are generating the menu for, "
             "including scheme and domain. For example: "
             "'https://www.example.com/about-us/')."
@@ -30,7 +31,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
     max_levels = api_form_fields.MaxLevelsChoiceField(
         label='max_levels',
         required=False,
-        help_text=_(
+        help_text= (
             "The maximum number of levels of menu items that should be "
             "included in the result. Defaults to the relevant setting value "
             "for this menu type."
@@ -39,7 +40,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
     current_site_id = api_form_fields.SiteIDChoiceField(
         label='current_site_id',
         required=False,
-        help_text=_(
+        help_text= (
             "The ID of the Wagtail 'Site' you are generating the menu for "
             "(if available)."
         ),
@@ -48,7 +49,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
         label='apply_active_classes',
         required=False,
         initial=False,
-        help_text=_(
+        help_text= (
             "Whether the view should set 'active_class' attributes on menu "
             "items to help indicate a user's current position within the menu "
             "structure. Defaults to 'false'. If providing a value of 'true', "
@@ -59,7 +60,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
         label='allow_repeating_parents',
         required=False,
         initial=False,
-        help_text=_(
+        help_text= (
             "Whether the view should allow pages inheriting from MenuPage or "
             "MenuPageMixin to add duplicates of themselves to their "
             "'children' when appearing as menu items. Defaults to the "
@@ -70,7 +71,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
         label='relative_page_urls',
         required=False,
         initial=False,
-        help_text=_(
+        help_text= (
             "Whether the view should use relative URLs for page links instead "
             "of absolute ones. Defaults to 'false'. If providing a value of "
             "'true', 'current_page_id' or 'current_url' must also be provided."
@@ -81,7 +82,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
         required=False,
         choices=settings.LANGUAGES,
         initial=settings.LANGUAGE_CODE,
-        help_text=_(
+        help_text= (
             "The language you wish to rendering the menu in. Must be one of "
             "the languages defined in your LANGUAGES setting. Will only "
             "affect the result if USE_I18N is True. Defaults to LANGUAGE_CODE."
@@ -91,8 +92,8 @@ class BaseMenuOptionSerializer(serializers.Serializer):
     max_levels_default = None
     allow_repeating_parents_default = True
 
-    def __init__(self, request, *args, **kwargs):
-        super().__init__(request, *args, **kwargs)
+    def __init_ (self, request, *args, **kwargs):
+        super().__init_ (request, *args, **kwargs)
         self.fields['current_page_id'].queryset = Page.objects.filter(depth__gt=1)
         if not settings.USE_I18N:
             self.fields.pop('language')
@@ -202,8 +203,8 @@ class BaseModelMenuOptionSerializer(BaseMenuOptionSerializer):
     max_levels = api_form_fields.MaxLevelsChoiceField(
         label='max_levels',
         required=False,
-        empty_label=_('Default: Use the value set for the menu object'),
-        help_text=_(
+        empty_label= ('Default: Use the value set for the menu object'),
+        help_text= (
             "The maximum number of levels of menu items that should be "
             "included in the result. Defaults to the 'max_levels' field value "
             "on the matching menu object."
@@ -246,16 +247,16 @@ class MainMenuOptionSerializer(BaseModelMenuOptionSerializer):
 class FlatMenuOptionSerializer(BaseModelMenuOptionSerializer):
     handle = api_form_fields.FlatMenuHandleField(
         label='handle',
-        help_text=_(
+        help_text= (
             "The 'handle' for the flat menu you wish to generate. For "
             "example: 'info' or 'contact'."
         )
     )
     fall_back_to_default_site_menus = api_form_fields.BooleanChoiceField(
-        label=_('fall_back_to_default_site_menus'),
-        default=True,
+        label= ('fall_back_to_default_site_menus'),
+        # default=True,
         required=False,
-        help_text=_(
+        help_text= (
             "If a menu cannot be found matching the provided 'handle' for the "
             "site indicated by 'current_url' or 'current_page_id', use the "
             "flat menu defined for the 'default' site (if available). "
@@ -280,7 +281,7 @@ class FlatMenuOptionSerializer(BaseModelMenuOptionSerializer):
 class ChildrenMenuOptionSerializer(BaseMenuOptionSerializer):
     parent_page_id = api_form_fields.PageIDChoiceField(
         label='parent_page_id',
-        help_text=_(
+        help_text= (
             "The ID of the page you want the menu to show children page links "
             "for."
         )
@@ -298,8 +299,8 @@ class ChildrenMenuOptionSerializer(BaseMenuOptionSerializer):
         'language',
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init_ (self, *args, **kwargs):
+        super().__init_ (*args, **kwargs)
         self.fields['parent_page_id'].queryset = Page.objects.filter(depth__gt=1)
 
     def clean_parent_page_id(self):
@@ -317,7 +318,7 @@ class SectionMenuOptionSerializer(BaseMenuOptionSerializer):
         label='section_root_page_id',
         required=False,
         indent_choice_labels=False,
-        help_text=_(
+        help_text= (
             "The ID of the 'section root page' you want the menu to show "
             "descendant page links for. If not supplied, the endpoint will "
             "attempt to derive this from 'current_url' or 'current_page_id'."
@@ -339,8 +340,8 @@ class SectionMenuOptionSerializer(BaseMenuOptionSerializer):
     # argument defaults
     max_levels_default = wagtailmenus_settings.DEFAULT_SECTION_MENU_MAX_LEVELS
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init_ (self, *args, **kwargs):
+        super().__init_ (*args, **kwargs)
         self.fields['section_root_page_id'].queryset = Page.objects.filter(
             depth__exact=wagtailmenus_settings.SECTION_ROOT_DEPTH)
 

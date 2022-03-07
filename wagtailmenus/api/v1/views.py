@@ -12,7 +12,7 @@ from rest_framework.settings import perform_import
 
 from wagtailmenus.conf import settings as wagtailmenus_settings
 from wagtailmenus.utils.misc import derive_ancestor_ids
-from wagtailmenus.api.utils import make_result_serializer_class
+from wagtailmenus.api.utils import make_serializer_class as make_result_serializer_class
 from wagtailmenus.api.v1.conf import settings as api_settings
 from wagtailmenus.api.v1.serializers import BaseModelMenuSerializer, options as option_serializers
 
@@ -79,7 +79,8 @@ class BaseMenuGeneratorView(MenuAPIView):
     def get_option_data(self):
         original = self.request.POST or self.request.GET
         data = original.copy()
-        for key, value in self.self.get_default_option_values():
+
+        for key, value in self.get_default_option_values().items():
             if key not in data:
                 data[key] = value
         return data
@@ -144,7 +145,7 @@ class BaseMenuGeneratorView(MenuAPIView):
             self.request._wagtatil_site = current_site  # Wagtail >= 2.9
 
         # Generate ancestor_page_ids
-        if kwargs['apply_active_classes']:
+        if 'apply_active_classes' in kwargs:
             ancestor_page_ids = derive_ancestor_ids(
                 kwargs.get('current_page') or kwargs.get('best_match_page')
             )
@@ -169,7 +170,7 @@ class BaseMenuGeneratorView(MenuAPIView):
         menu_instance = menu_class._get_render_prepared_object(
             dummy_context,
             add_sub_menus_inline=True,
-            use_absolute_page_urls=not kwargs.pop('relative_page_urls'),
+            use_absolute_page_urls=not kwargs.pop('relative_page_urls', None),
             ancestor_page_ids=ancestor_page_ids,
             **kwargs
         )
