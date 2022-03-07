@@ -1162,7 +1162,7 @@ class AbstractMainMenu(DefinesSubMenuTemplatesMixin, MenuWithMenuItems):
     # Override to modify output for custom classes in wagtailmenus.api
     api_fields = [
         APIField('site_id'),
-        APIField('items', ),
+        APIField('items'),
     ]
 
     class Meta:
