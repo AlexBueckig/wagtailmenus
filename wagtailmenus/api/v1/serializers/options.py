@@ -254,7 +254,7 @@ class FlatMenuOptionSerializer(BaseModelMenuOptionSerializer):
     )
     fall_back_to_default_site_menus = api_form_fields.BooleanChoiceField(
         label= ('fall_back_to_default_site_menus'),
-        # default=True,
+        initial=True,
         required=False,
         help_text= (
             "If a menu cannot be found matching the provided 'handle' for the "
