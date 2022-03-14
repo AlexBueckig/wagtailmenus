@@ -154,6 +154,8 @@ class BaseMenuGeneratorView(MenuAPIView):
         else:
             ancestor_page_ids = ()
 
+        fall_back_to_default_site_menus = kwargs.pop("fall_back_to_default_site_menus", False)
+
         # `Menu._get_render_prepared_object()`` normally recieves a
         # ``RequestContext`` object, but will accept a dictionary with a
         # similar data structure.
@@ -174,7 +176,7 @@ class BaseMenuGeneratorView(MenuAPIView):
             add_sub_menus_inline=True,
             use_absolute_page_urls=not kwargs.pop('relative_page_urls', False),
             ancestor_page_ids=ancestor_page_ids,
-            fall_back_to_default_site_menus=False,
+            fall_back_to_default_site_menus=fall_back_to_default_site_menus,
             **kwargs
         )
         if menu_instance is None:

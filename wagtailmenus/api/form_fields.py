@@ -132,9 +132,9 @@ class SiteIDChoiceField(forms.ModelChoiceField):
         super().__init__(*args, **kwargs)
 
 
-class FlatMenuHandleField(forms.SlugField):
+class FlatMenuHandleField(fields.SlugField):
 
     def __init__(self, *args, **kwargs):
         if settings.FLAT_MENUS_HANDLE_CHOICES:
-            kwargs['widget'] = forms.Select(choices=settings.FLAT_MENUS_HANDLE_CHOICES)
+            self.prepopulated_fields = settings.FLAT_MENUS_HANDLE_CHOICES
         super().__init__(*args, **kwargs)
