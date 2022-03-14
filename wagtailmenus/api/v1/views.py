@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from urllib import request
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import translation
@@ -100,7 +101,8 @@ class BaseMenuGeneratorView(MenuAPIView):
         context = self.get_serializer_context()
         return serializer_class(
             data=self.get_option_data(),
-            context=context
+            context=context,
+            request=self.request
         )
 
     def get_serializer_context(self):

@@ -3,8 +3,10 @@ from django.conf import settings
 from wagtail.core.models import Page
 from wagtailmenus.conf import settings as wagtailmenus_settings
 from wagtailmenus.api.utils import make_serializer_class
-
+from wagtailmenus.api.v1.conf import settings as api_settings
 from rest_framework import serializers
+
+from rest_framework import fields
 
 from wagtailmenus.api import form_fields as api_form_fields
 from django import forms
@@ -18,7 +20,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
             "(if available)."
         ),
     )
-    current_url = forms.URLField(
+    current_url = fields.URLField(
         label='current_url',
         max_length=300,
         required=False,
@@ -30,7 +32,8 @@ class BaseMenuOptionSerializer(serializers.Serializer):
     )
     max_levels = api_form_fields.MaxLevelsChoiceField(
         label='max_levels',
-        required=False,
+        allow_blank=True,
+        allow_null=True,
         help_text= (
             "The maximum number of levels of menu items that should be "
             "included in the result. Defaults to the relevant setting value "
@@ -92,9 +95,10 @@ class BaseMenuOptionSerializer(serializers.Serializer):
     max_levels_default = None
     allow_repeating_parents_default = True
 
-    def __init_ (self, request, *args, **kwargs):
-        super().__init_ (request, *args, **kwargs)
-        self.fields['current_page_id'].queryset = Page.objects.filter(depth__gt=1)
+    def __init__ (self, **kwargs):
+        self.request = kwargs.pop("request")
+        super().__init__(**kwargs)
+        # self.fields['current_page_id'].queryset = Page.objects.filter(depth__gt=1)
         if not settings.USE_I18N:
             self.fields.pop('language')
         if api_settings.SINGLE_SITE_MODE:
@@ -106,26 +110,24 @@ class BaseMenuOptionSerializer(serializers.Serializer):
             'allow_repeating_parents': self.allow_repeating_parents_default,
         }
 
-    def clean_current_site_id(self):
-        value = self.cleaned_data['current_site_id']
+    def validate_current_site_id(self, value):
         # Set 'current_site' to the page object (or None)
-        self.cleaned_data['current_site'] = value
+        #self.validated_data['current_site'] = value
         if value:
             # Use the page PK for 'current_site_id'
             return value.pk
         return value
 
-    def clean_current_page_id(self):
-        value = self.cleaned_data['current_page_id']
+    def validate_current_page_id(self, value):
         # Set 'current_page' to the page object (or None)
-        self.cleaned_data['current_page'] = value
+        #self.validated_data['current_page'] = value
         if value:
             # Use the page PK for 'current_page_id'
             return value.pk
         return value
 
-    def clean(self):
-        data = super().clean()
+    def validate(self, data):
+        data = super().validate(data)
 
         if data.get('relative_page_urls'):
             if(
@@ -134,30 +136,32 @@ class BaseMenuOptionSerializer(serializers.Serializer):
                 not data.get("current_page_id") and
                 not data.get("current_url")
             ):
-                self.add_error('relative_page_urls', (
+                raise serializers.ValidationError({'relative_page_urls': (
                     "To use relative page URLs, one of the following must "
                     "also be provided: 'current_site_id', 'current_page_id' "
                     "or 'current_url'. For single-site projects, you might "
                     "also consider enabling SINGLE_SITE_MODE."
-                ))
+                )})
             elif not data.get('current_site'):
                 self.derive_current_site()
 
         if data.get('apply_active_classes'):
             if not data.get("current_page_id") and not data.get("current_url"):
-                self.add_error('apply_active_classes', (
+                raise serializers.ValidationError({'apply_active_classes': (
                     "To apply active classes, one of the following must also "
                     "be provided: 'current_page_id' or 'current_url'."
-                ))
+                )})
             elif not data.get('current_page') and not data.get('best_match_page'):
                 self.derive_current_or_best_match_page()
+
+        return data
 
     def derive_current_site(self):
         """
         Attempts to derive a 'current_site' value from other values in
         ``cleaned_data`` and update ``cleaned_data`` with the value.
         """
-        data = self.cleaned_data
+        data = self.initial_data
 
         if api_settings.SINGLE_SITE_MODE:
             data['current_site'] = Site.objects.all().first()
@@ -179,7 +183,7 @@ class BaseMenuOptionSerializer(serializers.Serializer):
         be added to ``cleaned_data`` as 'current_page'. Otherwise, it will
         be added as 'best_match_page'.
         """
-        data = self.cleaned_data
+        data = self.initial_data
 
         if not data.get('current_site'):
             self.derive_current_site()
@@ -203,6 +207,8 @@ class BaseModelMenuOptionSerializer(BaseMenuOptionSerializer):
     max_levels = api_form_fields.MaxLevelsChoiceField(
         label='max_levels',
         required=False,
+        allow_blank=True,
+        allow_null=True,
         empty_label= ('Default: Use the value set for the menu object'),
         help_text= (
             "The maximum number of levels of menu items that should be "
@@ -211,24 +217,22 @@ class BaseModelMenuOptionSerializer(BaseMenuOptionSerializer):
         ),
     )
 
-    def clean(self):
-        data = self.cleaned_data
+    def validate(self, data):
 
         if not data.get('current_site'):
-
             if(
                 not api_settings.SINGLE_SITE_MODE and
                 not data.get("current_page_id") and
                 not data.get("current_url")
             ):
-                self.add_error('current_site', (
+                raise serializers.ValidationError({"current_site": (
                     "You must provide this, 'current_page_id' or 'current_url' "
                     "to allow the relevant menu to be identified."
-                ))
+                )})
             else:
                 self.derive_current_site()
 
-        return super().clean()
+        return super().validate(data)
 
 
 class MainMenuOptionSerializer(BaseModelMenuOptionSerializer):
@@ -299,14 +303,13 @@ class ChildrenMenuOptionSerializer(BaseMenuOptionSerializer):
         'language',
     )
 
-    def __init_ (self, *args, **kwargs):
-        super().__init_ (*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fields['parent_page_id'].queryset = Page.objects.filter(depth__gt=1)
 
-    def clean_parent_page_id(self):
-        value = self.cleaned_data['parent_page_id']
+    def validate_parent_page_id(self, value):
         # Set 'parent_page' to the page object (or None)
-        self.cleaned_data['parent_page'] = value
+        #self.validated_data['parent_page'] = value
         if value:
             # Use the page PK for 'parent_page_id'
             return value.pk
@@ -340,33 +343,32 @@ class SectionMenuOptionSerializer(BaseMenuOptionSerializer):
     # argument defaults
     max_levels_default = wagtailmenus_settings.DEFAULT_SECTION_MENU_MAX_LEVELS
 
-    def __init_ (self, *args, **kwargs):
-        super().__init_ (*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fields['section_root_page_id'].queryset = Page.objects.filter(
             depth__exact=wagtailmenus_settings.SECTION_ROOT_DEPTH)
 
-    def clean_section_root_page_id(self):
-        value = self.cleaned_data['section_root_page_id']
+    def validate_section_root_page_id(self, value):
         # Set 'section_root_page' to the page object (or None)
-        self.cleaned_data['section_root_page'] = value
+        # self.validated_data['section_root_page'] = value
         if value:
             # Use the page PK for 'section_root_page_id'
             return value.pk
         return value
 
-    def clean(self):
-        if not self.cleaned_data.get('section_root_page'):
+    def validate(self, data):
+        if not data.get('section_root_page'):
             self.derive_section_root_page()
-        return super().clean()
+        return super().validate(data)
 
     def derive_section_root_page(self):
-        data = self.cleaned_data
+        data = self.initial_data
 
         if not data.get('current_page_id') and not data.get('current_url'):
-            self.add_error('section_root_page_id', (
+            raise serializers.ValidationError({'section_root_page_id': (
                 "This value can only be ommitted when providing "
                 "'current_page_id' or 'current_url'."
-            ))
+            )})
             return
 
         if not data.get('current_page'):
@@ -379,7 +381,7 @@ class SectionMenuOptionSerializer(BaseMenuOptionSerializer):
             data['section_root_page'] = section_root
             data['section_root_page_id'] = section_root.pk
         else:
-            self.add_error('section_root_page_id', (
+            raise serializers.ValidationError({'section_root_page_id': (
                 "This value could not be derived from the 'current_page_id' "
                 "or 'current_url' values provided."
-            ))
+            )})

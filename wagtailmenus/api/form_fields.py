@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from wagtail.core.models import Page, Site
 
+from rest_framework import fields
+
 from wagtailmenus.conf import constants, settings
 
 
@@ -78,16 +80,16 @@ class JavascriptStyleBooleanSelect(forms.Select):
         }.get(value)
 
 
-class BooleanChoiceField(forms.BooleanField):
+class BooleanChoiceField(fields.BooleanField):
     widget = JavascriptStyleBooleanSelect
 
-    def clean(self, value):
+    def validate(self, value):
         if value is None:
             raise ValidationError("The value must be 'true' or 'false'.", code="invalid")
         return value
 
 
-class MaxLevelsChoiceField(forms.TypedChoiceField):
+class MaxLevelsChoiceField(fields.ChoiceField):
 
     default_error_messages = {
         'invalid_choice': _('The provided value is not a supported.')
@@ -98,8 +100,6 @@ class MaxLevelsChoiceField(forms.TypedChoiceField):
         choices = (('', empty_label),) + constants.MAX_LEVELS_CHOICES
         defaults = {
             'choices': choices,
-            'coerce': int,
-            'empty_value': None,
         }
         kwargs.update({k: v for k, v in defaults.items() if k not in kwargs})
         super().__init__(*args, **kwargs)
