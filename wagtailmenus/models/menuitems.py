@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from wagtail.admin.edit_handlers import FieldPanel, PageChooserPanel
 from wagtail.api import APIField
@@ -11,13 +11,22 @@ from wagtail.core.models import Page, Orderable
 from wagtailmenus.conf import settings
 from wagtailmenus.managers import MenuItemManager
 
+try:
+    from wagtail.admin.panels import FieldPanel, PageChooserPanel
+    from wagtail.models import Page, Orderable
+except ImportError:
+    from wagtail.admin.edit_handlers import FieldPanel, PageChooserPanel
+    from wagtail.core.models import Page, Orderable
+
 
 #########################################################
 # Base classes
 #########################################################
 
+
 class MenuItem:
     """A base class that all other 'menu item' classes should inherit from."""
+
     allow_subnav = False
 
 
@@ -25,18 +34,20 @@ class MenuItem:
 # Abstract models
 #########################################################
 
+
 class AbstractMenuItem(models.Model, MenuItem):
     """A model class that defines a base set of fields and methods for all
     'menu item' models."""
+
     link_page = models.ForeignKey(
         Page,
-        verbose_name=_('link to an internal page'),
+        verbose_name=_("link to an internal page"),
         blank=True,
         null=True,
         on_delete=models.CASCADE,
     )
     link_url = models.CharField(
-        verbose_name=_('link to a custom URL'),
+        verbose_name=_("link to a custom URL"),
         max_length=255,
         blank=True,
         null=True,
@@ -48,20 +59,20 @@ class AbstractMenuItem(models.Model, MenuItem):
         help_text=_(
             "Use this to optionally append a #hash or querystring to the "
             "above page's URL."
-        )
+        ),
     )
     handle = models.CharField(
-        verbose_name=_('handle'),
+        verbose_name=_("handle"),
         max_length=100,
         blank=True,
         help_text=_(
             "Use this field to optionally specify an additional value for "
             "each menu item, which you can then reference in custom menu "
             "templates."
-        )
+        ),
     )
     link_text = models.CharField(
-        verbose_name=_('link text'),
+        verbose_name=_("link text"),
         max_length=255,
         blank=True,
         help_text=_(
@@ -81,12 +92,12 @@ class AbstractMenuItem(models.Model, MenuItem):
     ``APIField`` (as shown at: http://docs.wagtail.io/en/stable/advanced_topics/api/v2/configuration.html#custom-serialisers)
     """
     api_fields = [
-        APIField('text'),
-        APIField('href'),
-        APIField('handle'),
-        APIField('active_class'),
-        APIField('page'),
-        APIField('children'),
+        APIField("text"),
+        APIField("href"),
+        APIField("handle"),
+        APIField("active_class"),
+        APIField("page"),
+        APIField("children"),
     ]
 
     """
@@ -98,10 +109,10 @@ class AbstractMenuItem(models.Model, MenuItem):
     an ``APIField`` (as shown at: http://docs.wagtail.io/en/stable/advanced_topics/api/v2/configuration.html#custom-serialisers)
     """
     page_api_fields = [
-        APIField('id'),
-        APIField('title'),
-        APIField('slug'),
-        APIField('type'),
+        APIField("id"),
+        APIField("title"),
+        APIField("slug"),
+        APIField("type"),
     ]
 
     """
@@ -111,11 +122,11 @@ class AbstractMenuItem(models.Model, MenuItem):
     guaranteed to be a ``Page`` object (whereas the 'item' value is not).
     """
     sub_item_api_fields = [
-        APIField('text'),
-        APIField('href'),
-        APIField('active_class'),
-        APIField('page'),
-        APIField('children'),
+        APIField("text"),
+        APIField("href"),
+        APIField("active_class"),
+        APIField("page"),
+        APIField("children"),
     ]
 
     """
@@ -127,38 +138,35 @@ class AbstractMenuItem(models.Model, MenuItem):
     defining an ``APIField`` (as shown at: http://docs.wagtail.io/en/stable/advanced_topics/api/v2/configuration.html#custom-serialisers)
     """
     sub_item_page_api_fields = [
-        APIField('id'),
-        APIField('title'),
-        APIField('slug'),
-        APIField('type'),
+        APIField("id"),
+        APIField("title"),
+        APIField("slug"),
+        APIField("type"),
     ]
 
     class Meta:
         abstract = True
         verbose_name = _("menu item")
         verbose_name_plural = _("menu items")
-        ordering = ('sort_order',)
+        ordering = ("sort_order",)
 
     @property
     def menu_text(self):
         if self.link_text:
             return self.link_text
         if not self.link_page:
-            return ''
+            return ""
         return getattr(
-            self.link_page,
-            settings.PAGE_FIELD_FOR_MENU_ITEM_TEXT,
-            self.link_page.title
+            self.link_page, settings.PAGE_FIELD_FOR_MENU_ITEM_TEXT, self.link_page.title
         )
 
     def relative_url(self, site=None, request=None):
         if self.link_page:
             try:
-                page_url = self.link_page.get_url(
-                    request=request, current_site=site)
+                page_url = self.link_page.get_url(request=request, current_site=site)
                 return page_url + self.url_append
             except TypeError:
-                return ''
+                return ""
         return self.link_url + self.url_append
 
     def get_full_url(self, request=None):
@@ -167,19 +175,19 @@ class AbstractMenuItem(models.Model, MenuItem):
                 page_url = self.link_page.get_full_url(request=request)
                 return page_url + self.url_append
             except TypeError:
-                return ''
+                return ""
         return self.link_url + self.url_append
 
     def clean(self, *args, **kwargs):
         if not self.link_url and not self.link_page:
             msg = _("Please choose an internal page or provide a custom URL")
-            raise ValidationError({'link_url': msg})
+            raise ValidationError({"link_url": msg})
         if self.link_url and self.link_page:
             msg = _("Linking to both a page and custom URL is not permitted")
-            raise ValidationError({'link_page': msg, 'link_url': msg})
+            raise ValidationError({"link_page": msg, "link_url": msg})
         if self.link_url and not self.link_text:
             msg = _("This field is required when linking to a custom URL")
-            raise ValidationError({'link_text': msg})
+            raise ValidationError({"link_text": msg})
         super().clean(*args, **kwargs)
 
     def get_active_class_for_request(self, request=None):
@@ -189,26 +197,23 @@ class AbstractMenuItem(models.Model, MenuItem):
         """
         parsed_url = urlparse(self.link_url)
         if parsed_url.netloc:
-            return ''
+            return ""
         if request.path == parsed_url.path:
             return settings.ACTIVE_CLASS
-        if (
-            request.path.startswith(parsed_url.path) and
-            parsed_url.path != '/'
-        ):
+        if request.path.startswith(parsed_url.path) and parsed_url.path != "/":
             return settings.ACTIVE_ANCESTOR_CLASS
-        return ''
+        return ""
 
     def __str__(self):
         return self.menu_text
 
     panels = [
-        PageChooserPanel('link_page'),
-        FieldPanel('link_url'),
-        FieldPanel('url_append'),
-        FieldPanel('link_text'),
-        FieldPanel('handle'),
-        FieldPanel('allow_subnav'),
+        PageChooserPanel("link_page"),
+        FieldPanel("link_url"),
+        FieldPanel("url_append"),
+        FieldPanel("link_text"),
+        FieldPanel("handle"),
+        FieldPanel("allow_subnav"),
     ]
 
 
@@ -221,7 +226,7 @@ class AbstractMainMenuItem(Orderable, AbstractMenuItem):
         help_text=_(
             "NOTE: The sub-menu might not be displayed, even if checked. "
             "It depends on how the menu is used in this project's templates."
-        )
+        ),
     )
 
     class Meta(AbstractMenuItem.Meta):
@@ -237,7 +242,7 @@ class AbstractFlatMenuItem(Orderable, AbstractMenuItem):
         help_text=_(
             "NOTE: The sub-menu might not be displayed, even if checked. "
             "It depends on how the menu is used in this project's templates."
-        )
+        ),
     )
 
     class Meta(AbstractMenuItem.Meta):
@@ -248,19 +253,18 @@ class AbstractFlatMenuItem(Orderable, AbstractMenuItem):
 # Concrete models
 #########################################################
 
+
 class MainMenuItem(AbstractMainMenuItem):
     """The default model class to use for 'main menu' menu items."""
+
     menu = ParentalKey(
-        'wagtailmenus.MainMenu',
-        on_delete=models.CASCADE,
-        related_name="menu_items"
+        "wagtailmenus.MainMenu", on_delete=models.CASCADE, related_name="menu_items"
     )
 
 
 class FlatMenuItem(AbstractFlatMenuItem):
     """The default model class to use for 'flat menu' menu items."""
+
     menu = ParentalKey(
-        'wagtailmenus.FlatMenu',
-        on_delete=models.CASCADE,
-        related_name="menu_items"
+        "wagtailmenus.FlatMenu", on_delete=models.CASCADE, related_name="menu_items"
     )

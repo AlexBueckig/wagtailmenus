@@ -1,6 +1,22 @@
 Changelog
 =========
 
+3.1.2 (17.06.2022)
+------------------
+
+* Added support for Wagtail >3.0.
+* Updated travis/tox test settings to test against Wagtail 3.0.
+* Fix: [#421](https://github.com/jazzband/wagtailmenus/issues/421), which prevented creating or editing menus in wagtail 3.0.
+
+3.1.1 (25.04.2022)
+------------------
+
+* Removed support for Wagtail <2.15.
+* Removed support for Django <3.2.
+* Added support for Wagtail 2.15.
+* Added support for Wagtail 2.16.
+* Added support for Django 4.0.
+
 3.1 (12.02.2022)
 ------------------
 

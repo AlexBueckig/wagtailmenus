@@ -9,12 +9,24 @@ from wagtail.core.models import Page, Site
 
 from wagtailmenus.conf import defaults
 from wagtailmenus.utils.misc import (
-    derive_page, derive_section_root, get_fake_request,
-    get_site_from_request
+    derive_page,
+    derive_section_root,
+    get_fake_request,
+    get_site_from_request,
 )
 from wagtailmenus.tests.models import (
-    ArticleListPage, ArticlePage, LowLevelPage, TopLevelPage
+    ArticleListPage,
+    ArticlePage,
+    LowLevelPage,
+    TopLevelPage,
 )
+
+try:
+    from wagtail import __version__ as wagtail_version
+    from wagtail.models import Page, Site
+except ImportError:
+    from wagtail.core import __version__ as wagtail_version
+    from wagtail.core.models import Page, Site
 
 request_factory = RequestFactory()
 
@@ -23,7 +35,7 @@ class TestGetFakeRequest(TestCase):
     """Ensures the value returned by get_fake_request() is compatible
     with Page url methods."""
 
-    fixtures = ['test.json']
+    fixtures = ["test.json"]
 
     def setUp(self):
         self.page = Page.objects.last()
@@ -47,17 +59,23 @@ class TestGetFakeRequest(TestCase):
 
 class TestDerivePage(TestCase):
     """Tests for wagtailmenus.utils.misc.derive_page()"""
-    fixtures = ['test.json']
+
+    fixtures = ["test.json"]
 
     def setUp(self):
-        self.site = Site.objects.select_related('root_page').first()
+        self.site = Site.objects.select_related("root_page").first()
         # Prefetch the specific page, so that it doesn't count
         # toward the counted queries
         self.site.root_page.specific
 
     def _run_test(
-        self, url, expected_page, expected_num_queries, full_url_match_expected,
-        accept_best_match=True, max_subsequent_route_failures=3
+        self,
+        url,
+        expected_page,
+        expected_num_queries,
+        full_url_match_expected,
+        accept_best_match=True,
+        max_subsequent_route_failures=3,
     ):
         request = request_factory.get(url)
         # Set these to improve efficiency
@@ -83,8 +101,8 @@ class TestDerivePage(TestCase):
         4. Fetch specific version of 'marvel-comics'
         """
         self._run_test(
-            url='/superheroes/marvel-comics/',
-            expected_page=LowLevelPage.objects.get(slug='marvel-comics'),
+            url="/superheroes/marvel-comics/",
+            expected_page=LowLevelPage.objects.get(slug="marvel-comics"),
             expected_num_queries=4,
             full_url_match_expected=True,
         )
@@ -98,8 +116,8 @@ class TestDerivePage(TestCase):
         4. Fetch specific version of 'latest-news'
         """
         self._run_test(
-            url='/news-and-events/latest-news/2016/04/',
-            expected_page=ArticleListPage.objects.get(slug='latest-news'),
+            url="/news-and-events/latest-news/2016/04/",
+            expected_page=ArticleListPage.objects.get(slug="latest-news"),
             expected_num_queries=4,
             full_url_match_expected=True,
         )
@@ -114,8 +132,8 @@ class TestDerivePage(TestCase):
         5. Look up 'article-one' from 'latest-news'
         """
         self._run_test(
-            url='/news-and-events/latest-news/2016/04/18/article-one/',
-            expected_page=ArticlePage.objects.get(slug='article-one'),
+            url="/news-and-events/latest-news/2016/04/18/article-one/",
+            expected_page=ArticlePage.objects.get(slug="article-one"),
             expected_num_queries=5,
             full_url_match_expected=True,
         )
@@ -128,8 +146,8 @@ class TestDerivePage(TestCase):
         3. Attempt to look up 'blah' from 'about-us'
         """
         self._run_test(
-            url='/about-us/blah/',
-            expected_page=TopLevelPage.objects.get(slug='about-us'),
+            url="/about-us/blah/",
+            expected_page=TopLevelPage.objects.get(slug="about-us"),
             expected_num_queries=3,
             full_url_match_expected=False,
         )
@@ -145,8 +163,8 @@ class TestDerivePage(TestCase):
         6. Attempt to look up 'blah/blah/' from 'latest-news'
         """
         self._run_test(
-            url='/news-and-events/latest-news/2016/04/01/blah/blah/',
-            expected_page=ArticleListPage.objects.get(slug='latest-news'),
+            url="/news-and-events/latest-news/2016/04/01/blah/blah/",
+            expected_page=ArticleListPage.objects.get(slug="latest-news"),
             expected_num_queries=6,
             full_url_match_expected=False,
         )
@@ -161,8 +179,8 @@ class TestDerivePage(TestCase):
         5. Attempt to look up 'blah/blah/blah/' from 'about-us'
         """
         self._run_test(
-            url='/about-us/blah/blah/blah/blah/blah',
-            expected_page=TopLevelPage.objects.get(slug='about-us'),
+            url="/about-us/blah/blah/blah/blah/blah",
+            expected_page=TopLevelPage.objects.get(slug="about-us"),
             expected_num_queries=5,
             full_url_match_expected=False,
         )
@@ -173,9 +191,9 @@ class TestDerivePage(TestCase):
         directly affects the number of route() attempts that will be made, even when
         """
         common_test_kwargs = {
-            'url': '/blah/blah/blah/blah/blah',
-            'expected_page': None,
-            'full_url_match_expected': False,
+            "url": "/blah/blah/blah/blah/blah",
+            "expected_page": None,
+            "full_url_match_expected": False,
         }
         for i in range(1, 3):
             self._run_test(
@@ -186,39 +204,38 @@ class TestDerivePage(TestCase):
 
     def test_exact_match_only_with_success(self):
         self._run_test(
-            url='/about-us/',
-            expected_page=TopLevelPage.objects.get(slug='about-us'),
+            url="/about-us/",
+            expected_page=TopLevelPage.objects.get(slug="about-us"),
             expected_num_queries=2,
             full_url_match_expected=True,
-            accept_best_match=False
+            accept_best_match=False,
         )
 
     def test_exact_match_only_without_success(self):
         self._run_test(
-            url='/blah/blah/blah/blah/blah',
+            url="/blah/blah/blah/blah/blah",
             expected_page=None,
             expected_num_queries=1,
             full_url_match_expected=False,
-            accept_best_match=False
+            accept_best_match=False,
         )
 
 
 class TestDeriveSectionRoot(TestCase):
     """Tests for wagtailmenus.utils.misc.derive_section_root()"""
-    fixtures = ['test.json']
+
+    fixtures = ["test.json"]
 
     def setUp(self):
-        self.page_with_depth_of_2 = Page.objects.get(
-            depth=2, url_path='/home/'
-        )
+        self.page_with_depth_of_2 = Page.objects.get(depth=2, url_path="/home/")
         self.page_with_depth_of_3 = Page.objects.get(
-            depth=3, url_path='/home/about-us/'
+            depth=3, url_path="/home/about-us/"
         )
         self.page_with_depth_of_4 = Page.objects.get(
-            depth=4, url_path='/home/about-us/meet-the-team/'
+            depth=4, url_path="/home/about-us/meet-the-team/"
         )
         self.page_with_depth_of_5 = Page.objects.get(
-            depth=5, url_path='/home/about-us/meet-the-team/staff-member-one/'
+            depth=5, url_path="/home/about-us/meet-the-team/staff-member-one/"
         )
 
     def test_returns_same_page_if_provided_page_is_section_root(self):
@@ -268,12 +285,13 @@ class TestDeriveSectionRoot(TestCase):
 
 class TestGetSiteFromRequest(TestCase):
     """Tests for wagtailmenus.utils.misc.get_site_from_request()"""
-    fixtures = ['test.json']
 
-    @mock.patch.object(Site, 'find_for_request')
+    fixtures = ["test.json"]
+
+    @mock.patch.object(Site, "find_for_request")
     def test_returns_site_attribute_from_request_if_a_site_object(self, mocked_method):
-        request = request_factory.get('/')
-        dummy_site = Site(hostname='beepboop')
+        request = request_factory.get("/")
+        dummy_site = Site(hostname="beepboop")
         request.site = dummy_site
         request._wagtail_site = dummy_site
 
@@ -281,18 +299,22 @@ class TestGetSiteFromRequest(TestCase):
         self.assertIs(result, dummy_site)
         self.assertFalse(mocked_method.called)
 
-    @mock.patch.object(Site, 'find_for_request')
-    def test_find_for_request_called_if_site_attribute_is_not_a_site_object(self, mocked_method):
-        request = request_factory.get('/')
-        dummy_site = 'just a string'
+    @mock.patch.object(Site, "find_for_request")
+    def test_find_for_request_called_if_site_attribute_is_not_a_site_object(
+        self, mocked_method
+    ):
+        request = request_factory.get("/")
+        dummy_site = "just a string"
         request.site = dummy_site
         request._wagtail_site = dummy_site
 
         get_site_from_request(request)
         self.assertTrue(mocked_method.called)
 
-    @mock.patch.object(Site, 'find_for_request', side_effect=Site.DoesNotExist())
-    def test_returns_none_if_find_for_request_raises_doesnotexist_error(self, mocked_method):
-        request = request_factory.get('/')
+    @mock.patch.object(Site, "find_for_request", side_effect=Site.DoesNotExist())
+    def test_returns_none_if_find_for_request_raises_doesnotexist_error(
+        self, mocked_method
+    ):
+        request = request_factory.get("/")
         result = get_site_from_request(request)
         self.assertIs(result, None)
