@@ -2,7 +2,12 @@ from functools import lru_cache
 
 from django import forms
 from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+
+try:
+    from django.utils.translation import ugettext_lazy as _
+except ImportError:
+    from django.utils.translation import gettext_lazy as _
+
 from wagtail.core.models import Page, Site
 
 from rest_framework import fields
@@ -13,22 +18,22 @@ from wagtailmenus.conf import constants, settings
 @lru_cache(maxsize=64)
 def get_label_indent(depth, indent_string):
     if depth > 1:
-        return ''.join(str(indent_string) for i in range(depth-2))
-    return ''
+        return "".join(str(indent_string) for i in range(depth - 2))
+    return ""
 
 
 class IndentedPageChoiceIterator(forms.models.ModelChoiceIterator):
-    indent_string = '    - '
+    indent_string = "    - "
 
     def __init__(self, field):
         self.field = field
         # Limit fields to help with performance
-        self.queryset = field.queryset.only('id', 'depth', 'title')
+        self.queryset = field.queryset.only("id", "depth", "title")
 
     def label_from_instance(self, obj):
         # Indent field labels according to depth (if enabled)
         if self.field.indent_choice_labels:
-            return '{indent}{title}'.format(
+            return "{indent}{title}".format(
                 indent=get_label_indent(obj.depth, self.indent_string),
                 title=obj.title,
             )
@@ -41,42 +46,41 @@ class IndentedPageChoiceIterator(forms.models.ModelChoiceIterator):
 
 
 class JavascriptStyleBooleanSelect(forms.Select):
-
     def __init__(self, attrs=None):
         choices = (
-            ('true', _('true')),
-            ('false', _('false')),
+            ("true", _("true")),
+            ("false", _("false")),
         )
         super().__init__(attrs, choices)
 
     def format_value(self, value):
         try:
             return {
-                True: 'true',
-                False: 'false',
-                'True': 'true',
-                'False': 'false',
-                'true': 'true',
-                'false': 'false',
-                1: 'true',
-                0: 'false',
-                '1': 'true',
-                '0': 'false',
+                True: "true",
+                False: "false",
+                "True": "true",
+                "False": "false",
+                "true": "true",
+                "false": "false",
+                1: "true",
+                0: "false",
+                "1": "true",
+                "0": "false",
             }[value]
         except KeyError:
-            return ''
+            return ""
 
     def value_from_datadict(self, data, files, name):
         value = data.get(name)
         return {
             True: True,
             False: False,
-            'True': True,
-            'False': False,
-            'true': True,
-            'false': False,
-            '1': True,
-            '0': False,
+            "True": True,
+            "False": False,
+            "true": True,
+            "false": False,
+            "1": True,
+            "0": False,
         }.get(value)
 
 
@@ -85,21 +89,23 @@ class BooleanChoiceField(fields.BooleanField):
 
     def validate(self, value):
         if value is None:
-            raise ValidationError("The value must be 'true' or 'false'.", code="invalid")
+            raise ValidationError(
+                "The value must be 'true' or 'false'.", code="invalid"
+            )
         return value
 
 
 class MaxLevelsChoiceField(fields.ChoiceField):
 
     default_error_messages = {
-        'invalid_choice': _('The provided value is not a supported.')
+        "invalid_choice": _("The provided value is not a supported.")
     }
 
     def __init__(self, *args, **kwargs):
-        empty_label = kwargs.pop('empty_label', '-----')
-        choices = (('', empty_label),) + constants.MAX_LEVELS_CHOICES
+        empty_label = kwargs.pop("empty_label", "-----")
+        choices = (("", empty_label),) + constants.MAX_LEVELS_CHOICES
         defaults = {
-            'choices': choices,
+            "choices": choices,
         }
         kwargs.update({k: v for k, v in defaults.items() if k not in kwargs})
         super().__init__(*args, **kwargs)
@@ -108,32 +114,31 @@ class MaxLevelsChoiceField(fields.ChoiceField):
 class PageIDChoiceField(forms.ModelChoiceField):
 
     default_error_messages = {
-        'invalid_choice': _('The provided value is not a valid page ID.')
+        "invalid_choice": _("The provided value is not a valid page ID.")
     }
 
     iterator = IndentedPageChoiceIterator
 
     def __init__(self, *args, **kwargs):
-        if 'queryset' not in kwargs:
-            kwargs['queryset'] = Page.objects.filter(depth__gt=1)
-        self.indent_choice_labels = kwargs.pop('indent_choice_labels', True)
+        if "queryset" not in kwargs:
+            kwargs["queryset"] = Page.objects.filter(depth__gt=1)
+        self.indent_choice_labels = kwargs.pop("indent_choice_labels", True)
         super().__init__(*args, **kwargs)
 
 
 class SiteIDChoiceField(forms.ModelChoiceField):
 
     default_error_messages = {
-        'invalid_choice': _('The provided valie is not a valid site ID.')
+        "invalid_choice": _("The provided valie is not a valid site ID.")
     }
 
     def __init__(self, *args, **kwargs):
-        if 'queryset' not in 'kwargs':
-            kwargs['queryset'] = Site.objects.all()
+        if "queryset" not in "kwargs":
+            kwargs["queryset"] = Site.objects.all()
         super().__init__(*args, **kwargs)
 
 
 class FlatMenuHandleField(fields.SlugField):
-
     def __init__(self, *args, **kwargs):
         if settings.FLAT_MENUS_HANDLE_CHOICES:
             self.prepopulated_fields = settings.FLAT_MENUS_HANDLE_CHOICES

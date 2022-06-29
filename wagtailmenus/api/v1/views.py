@@ -3,7 +3,11 @@ from urllib import request
 
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import translation
-from django.utils.translation import ugettext_lazy as _
+
+try:
+    from django.utils.translation import ugettext_lazy as _
+except ImportError:
+    from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
@@ -15,7 +19,10 @@ from wagtailmenus.conf import settings as wagtailmenus_settings
 from wagtailmenus.utils.misc import derive_ancestor_ids
 from wagtailmenus.api.utils import make_serializer_class as make_result_serializer_class
 from wagtailmenus.api.v1.conf import settings as api_settings
-from wagtailmenus.api.v1.serializers import BaseModelMenuSerializer, options as option_serializers
+from wagtailmenus.api.v1.serializers import (
+    BaseModelMenuSerializer,
+    options as option_serializers,
+)
 
 
 class MenuAPIView(APIView):
@@ -24,17 +31,16 @@ class MenuAPIView(APIView):
         if api_settings.AUTHENTICATION_CLASSES is not None:
             self.authentication_classes = perform_import(
                 api_settings.AUTHENTICATION_CLASSES,
-                'WAGTAILMENUS_API_V1_AUTHENTICATION_CLASSES'
+                "WAGTAILMENUS_API_V1_AUTHENTICATION_CLASSES",
             )
         if api_settings.PERMISSION_CLASSES is not None:
             self.permission_classes = perform_import(
                 api_settings.PERMISSION_CLASSES,
-                'WAGTAILMENUS_API_V1_PERMISSION_CLASSES'
+                "WAGTAILMENUS_API_V1_PERMISSION_CLASSES",
             )
         if api_settings.RENDERER_CLASSES is not None:
             self.renderer_classes = perform_import(
-                api_settings.RENDERER_CLASSES,
-                'WAGTAILMENUS_API_V1_RENDERER_CLASSES'
+                api_settings.RENDERER_CLASSES, "WAGTAILMENUS_API_V1_RENDERER_CLASSES"
             )
 
 
@@ -47,16 +53,16 @@ class MenuGeneratorIndexView(MenuAPIView):
         # Return a plain {"name": "hyperlink"} response.
         data = OrderedDict()
         namespace = request.resolver_match.namespace
-        url_names = ('main_menu', 'flat_menu', 'section_menu', 'children_menu')
+        url_names = ("main_menu", "flat_menu", "section_menu", "children_menu")
         for name in url_names:
             if namespace:
-                name = namespace + ':' + name
+                name = namespace + ":" + name
             data[name] = reverse(
                 name,
                 args=args,
                 kwargs=kwargs,
                 request=request,
-                format=kwargs.get('format', None)
+                format=kwargs.get("format", None),
             )
         return Response(data)
 
@@ -92,30 +98,27 @@ class BaseMenuGeneratorView(MenuAPIView):
             return cls.serializer_class
         raise ImproperlyConfigured(
             "You must either set the 'serializer_class' attribute or "
-            "override the get_serializer_class() method for '%s'"
-            % cls.__name__
+            "override the get_serializer_class() method for '%s'" % cls.__name__
         )
 
     def get_serializer(self):
         serializer_class = self.get_serializer_class()
         context = self.get_serializer_context()
         return serializer_class(
-            data=self.get_option_data(),
-            context=context,
-            request=self.request
+            data=self.get_option_data(), context=context, request=self.request
         )
 
     def get_serializer_context(self):
         return {
-            'request': self.request,
-            'format': self.format_kwarg,
-            'view': self,
+            "request": self.request,
+            "format": self.format_kwarg,
+            "view": self,
         }
 
     def get_default_option_values(self):
         return {
-            'max_levels': self.max_levels_default,
-            'allow_repeating_parents': self.allow_repeating_parents_default,
+            "max_levels": self.max_levels_default,
+            "allow_repeating_parents": self.allow_repeating_parents_default,
         }
 
     # ---------------------------------------------------------------
@@ -128,8 +131,7 @@ class BaseMenuGeneratorView(MenuAPIView):
             return cls.menu_class
         raise ImproperlyConfigured(
             "You must either set the 'menu_class' attribute or override "
-            "the get_menu_class() method for '%s'"
-            % cls.__name__
+            "the get_menu_class() method for '%s'" % cls.__name__
         )
 
     def get_object(self, **kwargs):
@@ -141,32 +143,34 @@ class BaseMenuGeneratorView(MenuAPIView):
         """
 
         # Set request attributes with 'current_site'
-        current_site = kwargs.pop('current_site', None)
+        current_site = kwargs.pop("current_site", None)
         if current_site is not None:
             self.request.site = current_site  # Wagtail < 2.9
             self.request._wagtatil_site = current_site  # Wagtail >= 2.9
 
         # Generate ancestor_page_ids
-        if 'apply_active_classes' in kwargs:
+        if "apply_active_classes" in kwargs:
             ancestor_page_ids = derive_ancestor_ids(
-                kwargs.get('current_page') or kwargs.get('best_match_page')
+                kwargs.get("current_page") or kwargs.get("best_match_page")
             )
         else:
             ancestor_page_ids = ()
 
-        fall_back_to_default_site_menus = kwargs.pop("fall_back_to_default_site_menus", False)
+        fall_back_to_default_site_menus = kwargs.pop(
+            "fall_back_to_default_site_menus", False
+        )
 
         # `Menu._get_render_prepared_object()`` normally recieves a
         # ``RequestContext`` object, but will accept a dictionary with a
         # similar data structure.
         dummy_context = {
-            'request': self.request,
-            'current_site': current_site,
-            'wagtailmenus_vals': {
-                'current_page': kwargs.pop('current_page', None),
-                'section_root': kwargs.pop('section_root_page', None),
-                'current_page_ancestor_ids': ancestor_page_ids,
-            }
+            "request": self.request,
+            "current_site": current_site,
+            "wagtailmenus_vals": {
+                "current_page": kwargs.pop("current_page", None),
+                "section_root": kwargs.pop("section_root_page", None),
+                "current_page_ancestor_ids": ancestor_page_ids,
+            },
         }
 
         # Generate the menu and return
@@ -174,15 +178,17 @@ class BaseMenuGeneratorView(MenuAPIView):
         menu_instance = menu_class._get_render_prepared_object(
             dummy_context,
             add_sub_menus_inline=True,
-            use_absolute_page_urls=not kwargs.pop('relative_page_urls', False),
+            use_absolute_page_urls=not kwargs.pop("relative_page_urls", False),
             ancestor_page_ids=ancestor_page_ids,
             fall_back_to_default_site_menus=fall_back_to_default_site_menus,
             **kwargs
         )
         if menu_instance is None:
-            raise NotFound(_(
-                "No {class_name} object could be found matching the supplied "
-                "values.").format(class_name=menu_class.__name__)
+            raise NotFound(
+                _(
+                    "No {class_name} object could be found matching the supplied "
+                    "values."
+                ).format(class_name=menu_class.__name__)
             )
 
         return menu_instance
@@ -228,7 +234,7 @@ class BaseMenuGeneratorView(MenuAPIView):
 
         # Activate selected language during serialization
         with translation.override(
-            option_serializer.validated_data.get('language', translation.get_language())
+            option_serializer.validated_data.get("language", translation.get_language())
         ):
             # Get a menu instance using the valid data
             menu_instance = self.get_object(**option_serializer.validated_data)
@@ -245,10 +251,11 @@ class ChildrenMenuGeneratorView(BaseMenuGeneratorView):
     Returns a JSON representation of a 'children menu' (including menu items)
     matching the supplied arguments.
     """
-    name = _('Generate Children Menu')
+
+    name = _("Generate Children Menu")
     menu_class = wagtailmenus_settings.objects.CHILDREN_MENU_CLASS
     serializer_class = option_serializers.ChildrenMenuOptionSerializer
-    result_serializer_class_setting_name = 'CHILDREN_MENU_SERIALIZER'
+    result_serializer_class_setting_name = "CHILDREN_MENU_SERIALIZER"
 
     # argument defaults
     max_levels_default = wagtailmenus_settings.DEFAULT_CHILDREN_MENU_MAX_LEVELS
@@ -259,10 +266,11 @@ class SectionMenuGeneratorView(BaseMenuGeneratorView):
     Returns a JSON representation of a 'section menu' (including menu items)
     matching the supplied arguments.
     """
-    name = _('Generate Section Menu')
+
+    name = _("Generate Section Menu")
     menu_class = wagtailmenus_settings.objects.SECTION_MENU_CLASS
     serializer_class = option_serializers.SectionMenuOptionSerializer
-    result_serializer_class_setting_name = 'SECTION_MENU_SERIALIZER'
+    result_serializer_class_setting_name = "SECTION_MENU_SERIALIZER"
 
     # argument defaults
     max_levels_default = wagtailmenus_settings.DEFAULT_SECTION_MENU_MAX_LEVELS
@@ -290,9 +298,9 @@ class BaseModelMenuGeneratorView(BaseMenuGeneratorView):
     @classmethod
     def get_result_serializer_class_create_kwargs(cls, **kwargs):
         values = {
-            'model': cls.menu_class,
-            'field_names': cls.get_result_serializer_field_names(),
-            'field_serializer_overrides': cls.get_result_serializer_field_overrides(),
+            "model": cls.menu_class,
+            "field_names": cls.get_result_serializer_field_names(),
+            "field_serializer_overrides": cls.get_result_serializer_field_overrides(),
         }
         values.update(kwargs)
         return values
@@ -301,7 +309,7 @@ class BaseModelMenuGeneratorView(BaseMenuGeneratorView):
     def get_result_serializer_class(cls):
         if cls.result_serializer_class:
             return cls.result_serializer_class
-        name = cls.menu_class.__name__ + 'Serializer'
+        name = cls.menu_class.__name__ + "Serializer"
         base_class = cls.base_result_serializer_class
         create_kwargs = cls.get_result_serializer_class_create_kwargs()
         return make_result_serializer_class(name, base_class, **create_kwargs)
@@ -312,10 +320,11 @@ class MainMenuGeneratorView(BaseModelMenuGeneratorView):
     Returns a JSON representation of a 'main menu' (including menu items)
     matching the supplied arguments.
     """
-    name = _('Generate Main Menu')
+
+    name = _("Generate Main Menu")
     menu_class = wagtailmenus_settings.models.MAIN_MENU_MODEL
     serializer_class = option_serializers.MainMenuOptionSerializer
-    base_result_serializer_class_setting_name = 'BASE_MAIN_MENU_SERIALIZER'
+    base_result_serializer_class_setting_name = "BASE_MAIN_MENU_SERIALIZER"
 
 
 class FlatMenuGeneratorView(BaseModelMenuGeneratorView):
@@ -323,15 +332,18 @@ class FlatMenuGeneratorView(BaseModelMenuGeneratorView):
     Returns a JSON representation of a 'flat menu' (including menu items)
     matching the supplied arguments.
     """
-    name = _('Generate Flat Menu')
+
+    name = _("Generate Flat Menu")
     menu_class = wagtailmenus_settings.models.FLAT_MENU_MODEL
     serializer_class = option_serializers.FlatMenuOptionSerializer
-    base_result_serializer_class_setting_name = 'BASE_FLAT_MENU_SERIALIZER'
+    base_result_serializer_class_setting_name = "BASE_FLAT_MENU_SERIALIZER"
 
     # argument defaults
     fall_back_to_default_site_menus_default = True
 
     def get_default_option_values(self):
         initial = super().get_default_option_values()
-        initial['fall_back_to_default_site_menus'] = self.fall_back_to_default_site_menus_default
+        initial[
+            "fall_back_to_default_site_menus"
+        ] = self.fall_back_to_default_site_menus_default
         return initial
