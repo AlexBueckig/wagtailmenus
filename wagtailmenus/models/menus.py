@@ -545,6 +545,9 @@ class Menu:
                 item, settings.PAGE_FIELD_FOR_MENU_ITEM_TEXT, item.title
             )
 
+            if item.text is None:
+                item.text = item.title
+
         # ---------------------------------------------------------------------
         # Set 'href' attribute
         # ---------------------------------------------------------------------
