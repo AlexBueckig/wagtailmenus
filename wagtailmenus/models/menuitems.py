@@ -156,9 +156,15 @@ class AbstractMenuItem(models.Model, MenuItem):
             return self.link_text
         if not self.link_page:
             return ""
-        return getattr(
+
+        text = getattr(
             self.link_page, settings.PAGE_FIELD_FOR_MENU_ITEM_TEXT, self.link_page.title
         )
+
+        if text is None:
+            text = self.link_page.title
+
+        return text
 
     def relative_url(self, site=None, request=None):
         if self.link_page:
