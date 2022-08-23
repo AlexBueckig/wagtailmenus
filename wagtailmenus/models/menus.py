@@ -545,6 +545,9 @@ class Menu:
                 item, settings.PAGE_FIELD_FOR_MENU_ITEM_TEXT, item.title
             )
 
+            if item.text is None:
+                item.text = item.title
+
         # ---------------------------------------------------------------------
         # Set 'href' attribute
         # ---------------------------------------------------------------------
@@ -825,6 +828,10 @@ class SectionMenu(DefinesSubMenuTemplatesMixin, MenuFromPage):
         root_page.text = getattr(
             root_page, settings.PAGE_FIELD_FOR_MENU_ITEM_TEXT, root_page.title
         )
+
+        if root_page.text is None:
+            root_page.text = root_page.title
+
         if option_vals.use_absolute_page_urls:
             href = root_page.get_full_url(request=request)
         else:
