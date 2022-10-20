@@ -319,6 +319,11 @@ class AbstractLinkPage(Page):
         site = getattr(request, "site", None)
         return redirect(self.relative_url(current_site=site, request=request))
 
+    def serve_preview(self, request, mode):
+        return HttpResponse(_("This page redirects to: %(url)s") % {
+            'url': self.get_full_url(request)
+        })
+
     def _get_dummy_header_url(self, original_request=None):
         """
         Overrides Page._get_dummy_header_url() (added in Wagtail 2.7) to avoid
